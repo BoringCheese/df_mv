@@ -76,7 +76,7 @@ class attention(nn.Module):
         super().__init__()
         self.num_head = num_head
         self.window = window
-
+        """原本的模型"""
         # self.q = nn.Linear(dim, dim)
         # self.q_cut = nn.Linear(dim, dim // 2)
         # self.a = nn.Linear(dim, dim)
@@ -86,7 +86,7 @@ class attention(nn.Module):
         # self.e_fore = nn.Linear(dim // 2, dim // 2)
         # self.e_back = nn.Linear(dim // 2, dim // 2)
         self.proj = nn.Linear(dim // 2 * 3, dim)
-
+        """全连接改成mv2的模型"""
         self.q = InvertedResidual(in_channels=dim, out_channels=dim, stride=1, expand_ratio=1, bn_ac=False)
         self.q_cut = InvertedResidual(in_channels=dim, out_channels=dim // 2, stride=1, expand_ratio=1, bn_ac=False)
         self.a = InvertedResidual(in_channels=dim, out_channels=dim, stride=1, expand_ratio=1, bn_ac=False)
