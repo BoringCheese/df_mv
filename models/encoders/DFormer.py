@@ -2,7 +2,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
-
+from models.mobileVit.model import InvertedResidual
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -78,6 +78,12 @@ class attention(nn.Module):
         self.window = window
 
         self.q = nn.Linear(dim, dim)
+        # self.q = InvertedResidual(in_channels=dim,
+        #                           out_channels=dim,
+        #                           stride=1,
+        #                           expand_ratio=4
+        #                           )
+        # self.q = nn.Conv2d(dim, dim, kernel_size=1, bias=False)
         self.q_cut = nn.Linear(dim, dim // 2)
         self.a = nn.Linear(dim, dim)
         self.l = nn.Linear(dim, dim)
@@ -109,8 +115,10 @@ class attention(nn.Module):
         if self.window != 0:
             short_cut = torch.cat([x, x_e], dim=3)  ##########
             short_cut = short_cut.permute(0, 3, 1, 2)  #############
-
+        # x = x.permute(0, 3, 1, 2)
         q = self.q(x)
+        # x = x.permute(0, 2, 3, 1)
+        # q = q.permute(0, 2, 3, 1)
         cutted_x = self.q_cut(x)
         x = self.l(x).permute(0, 3, 1, 2)
         x = self.act(x)
@@ -220,7 +228,8 @@ class DFormer(BaseModule):
             nn.Conv2d(3, dims[0] // 2, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(dims[0] // 2),
             nn.GELU(),
-            StemModule(dims[0] // 2, dims[0]),
+            nn.Conv2d(dims[0] // 2, dims[0], kernel_size=3, stride=2, padding=1),
+            # StemModule(dims[0] // 2, dims[0]),
             nn.BatchNorm2d(dims[0]),
         )
 
