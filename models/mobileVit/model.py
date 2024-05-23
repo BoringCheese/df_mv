@@ -12,6 +12,8 @@ from torch.nn import functional as F
 
 from models.mobileVit.transformer import TransformerEncoder
 from models.mobileVit.model_config import get_config
+
+
 # from utils import log_gabor_3
 
 
@@ -143,7 +145,9 @@ class InvertedResidual(nn.Module):
             out_channels: int,
             stride: int,
             expand_ratio: Union[int, float],
+            bn_ac: Optional[bool] = True,
             skip_connection: Optional[bool] = True,
+
     ) -> None:
         assert stride in [1, 2]
         hidden_dim = make_divisible(int(round(in_channels * expand_ratio)), 8)
@@ -168,7 +172,9 @@ class InvertedResidual(nn.Module):
                 out_channels=hidden_dim,
                 stride=stride,
                 kernel_size=3,
-                groups=hidden_dim
+                groups=hidden_dim,
+                use_norm=bn_ac,
+                use_act=bn_ac,
             ),
         )
 

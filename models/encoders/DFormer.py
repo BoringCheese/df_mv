@@ -77,22 +77,24 @@ class attention(nn.Module):
         self.num_head = num_head
         self.window = window
 
-        self.q = nn.Linear(dim, dim)
-        # self.q = InvertedResidual(in_channels=dim,
-        #                           out_channels=dim,
-        #                           stride=1,
-        #                           expand_ratio=4
-        #                           )
-        # self.q = nn.Conv2d(dim, dim, kernel_size=1, bias=False)
-        self.q_cut = nn.Linear(dim, dim // 2)
-        self.a = nn.Linear(dim, dim)
-        self.l = nn.Linear(dim, dim)
+        # self.q = nn.Linear(dim, dim)
+        # self.q_cut = nn.Linear(dim, dim // 2)
+        # self.a = nn.Linear(dim, dim)
+        # self.l = nn.Linear(dim, dim)
         self.conv = nn.Conv2d(dim, dim, 7, padding=3, groups=dim)
         self.e_conv = nn.Conv2d(dim // 2, dim // 2, 7, padding=3, groups=dim // 2)
-        self.e_fore = nn.Linear(dim // 2, dim // 2)
-        self.e_back = nn.Linear(dim // 2, dim // 2)
-
+        # self.e_fore = nn.Linear(dim // 2, dim // 2)
+        # self.e_back = nn.Linear(dim // 2, dim // 2)
         self.proj = nn.Linear(dim // 2 * 3, dim)
+
+        self.q = InvertedResidual(in_channels=dim, out_channels=dim, stride=1, expand_ratio=1, bn_ac=False)
+        self.q_cut = InvertedResidual(in_channels=dim, out_channels=dim // 2, stride=1, expand_ratio=1, bn_ac=False)
+        self.a = InvertedResidual(in_channels=dim, out_channels=dim, stride=1, expand_ratio=1, bn_ac=False)
+        self.l = InvertedResidual(in_channels=dim, out_channels=dim, stride=1, expand_ratio=1, bn_ac=False)
+        self.e_fore = InvertedResidual(in_channels=dim // 2, out_channels=dim // 2, stride=1, expand_ratio=1, bn_ac=False)
+        self.e_back = InvertedResidual(in_channels=dim // 2, out_channels=dim // 2, stride=1, expand_ratio=1, bn_ac=False)
+        # self.proj = InvertedResidual(in_channels=dim // 2, out_channels=dim // 2, stride=1, expand_ratio=4)
+
         if not drop_depth:
             self.proj_e = nn.Linear(dim // 2 * 3, dim // 2)
         if window != 0:
@@ -115,16 +117,19 @@ class attention(nn.Module):
         if self.window != 0:
             short_cut = torch.cat([x, x_e], dim=3)  ##########
             short_cut = short_cut.permute(0, 3, 1, 2)  #############
-        # x = x.permute(0, 3, 1, 2)
-        q = self.q(x)
-        # x = x.permute(0, 2, 3, 1)
-        # q = q.permute(0, 2, 3, 1)
-        cutted_x = self.q_cut(x)
-        x = self.l(x).permute(0, 3, 1, 2)
-        x = self.act(x)
+        # q = self.q(x)
+        # cutted_x = self.q_cut(x)
+        # x = self.l(x).permute(0, 3, 1, 2)
+        # x = self.act(x)
+        # a = self.conv(x)
+        # a = a.permute(0, 2, 3, 1)
+        # a = self.a(a)
 
+        x = x.permute(0, 3, 1, 2)  # B C H W
+        q = self.q(x)
+        cutted_x = self.q_cut(x)
+        x = self.l(x)
         a = self.conv(x)
-        a = a.permute(0, 2, 3, 1)
         a = self.a(a)
 
         if self.window != 0:
@@ -144,7 +149,13 @@ class attention(nn.Module):
                 B, C // 2, self.window, self.window)
             attn = F.interpolate(attn, (H, W), mode='bilinear', align_corners=False).permute(0, 2, 3, 1)
 
-        x_e = self.e_back(self.e_conv(self.e_fore(x_e).permute(0, 3, 1, 2)).permute(0, 2, 3, 1))
+        x_e = x_e.permute(0, 3, 1, 2)
+        x_e = self.e_back(self.e_conv(self.e_fore(x_e)))
+        x_e = x_e.permute(0, 2, 3, 1)
+        cutted_x = cutted_x.permute(0, 2, 3, 1)
+        a = a.permute(0, 2, 3, 1)
+        q = q.permute(0, 2, 3, 1)
+
         cutted_x = cutted_x * x_e
         x = q * a
 

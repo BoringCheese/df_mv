@@ -126,7 +126,7 @@ def main(args):
                                      data_loader=val_loader,
                                      device=device,
                                      epoch=epoch)
-        with open("H:\\data\\df_n.txt", "a+") as f:
+        with open("H:\\data\\df_conv.txt", "a+") as f:
             print("[train epoch {}] loss: {:.3f}, acc: {:.3f}".format(epoch, train_loss, train_acc), file=f)
             print("[val epoch {}] loss: {:.3f}, acc: {:.3f}".format(epoch, val_loss, val_acc), file=f)
         tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                         default="H:\\Df_mbvit\\datasets\\flower_data\\vision")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./weights/latest_model.pth',
+    parser.add_argument('--weights', type=str, default='',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
